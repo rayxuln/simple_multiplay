@@ -1,0 +1,66 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://Test1/Test1.gd" type="Script" id=1]
+
+[node name="Test1" type="Node"]
+script = ExtResource( 1 )
+
+[node name="SMTestNode" type="SMTestNode" parent="."]
+
+[node name="Control" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -486.0
+margin_top = -187.0
+margin_right = 486.0
+margin_bottom = 86.0
+alignment = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Control/VBoxContainer"]
+margin_top = 100.0
+margin_right = 972.0
+margin_bottom = 134.0
+
+[node name="ServerButton" type="Button" parent="Control/VBoxContainer/HBoxContainer"]
+margin_right = 102.0
+margin_bottom = 34.0
+size_flags_horizontal = 0
+text = "server_send"
+
+[node name="ServerLineEdit" type="LineEdit" parent="Control/VBoxContainer/HBoxContainer"]
+margin_left = 106.0
+margin_right = 972.0
+margin_bottom = 34.0
+size_flags_horizontal = 3
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="Control/VBoxContainer"]
+margin_top = 138.0
+margin_right = 972.0
+margin_bottom = 172.0
+
+[node name="ClientButton" type="Button" parent="Control/VBoxContainer/HBoxContainer2"]
+margin_right = 99.0
+margin_bottom = 34.0
+size_flags_horizontal = 0
+text = "client_send"
+
+[node name="ClientLineEdit" type="LineEdit" parent="Control/VBoxContainer/HBoxContainer2"]
+margin_left = 103.0
+margin_right = 972.0
+margin_bottom = 34.0
+size_flags_horizontal = 3
+
+[connection signal="pressed" from="Control/VBoxContainer/HBoxContainer/ServerButton" to="." method="_on_ServerButton_pressed"]
+[connection signal="pressed" from="Control/VBoxContainer/HBoxContainer2/ClientButton" to="." method="_on_ClientButton_pressed"]
