@@ -1,5 +1,5 @@
 # Simple Multiplay
 
-A wrapper of enet libary for Godot 3.
+A wrapper of enet library for Godot 3.
 
 **W.I.P**
