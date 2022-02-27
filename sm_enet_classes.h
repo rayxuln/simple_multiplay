@@ -73,8 +73,17 @@ protected:
   static void _bind_methods();
 
 public:
-  struct CustomData {
-    uint64_t peer_id;
+  enum PeerState {
+    PEER_STATE_DISCONNECTED = ENET_PEER_STATE_DISCONNECTED,
+    PEER_STATE_CONNECTING = ENET_PEER_STATE_CONNECTING,
+    PEER_STATE_ACKNOWLEDGING_CONNECT = ENET_PEER_STATE_ACKNOWLEDGING_CONNECT,
+    PEER_STATE_CONNECTION_PENDING = ENET_PEER_STATE_CONNECTION_PENDING,
+    PEER_STATE_CONNECTION_SUCCEEDED = ENET_PEER_STATE_CONNECTION_SUCCEEDED,
+    PEER_STATE_CONNECTED = ENET_PEER_STATE_CONNECTED,
+    PEER_STATE_DISCONNECT_LATER = ENET_PEER_STATE_DISCONNECT_LATER,
+    PEER_STATE_DISCONNECTING = ENET_PEER_STATE_DISCONNECTING,
+    PEER_STATE_ACKNOWLEDGING_DISCONNECT = ENET_PEER_STATE_ACKNOWLEDGING_DISCONNECT,
+    PEER_STATE_ZOMBIE = ENET_PEER_STATE_ZOMBIE
   };
 
   inline ENetPeer *get_enet_object() {
@@ -93,6 +102,7 @@ public:
   String get_address();
   uint16_t get_port();
   uint32_t get_connect_id();
+  int get_state();
 
   SMENetPeer();
   virtual ~SMENetPeer();
@@ -117,7 +127,8 @@ public:
   Error create_client(size_t peer_count, size_t channel_limits);
   void destroy();
 
-  void host_service(uint32_t timeout);
+  Error host_service(uint32_t timeout);
+  bool is_valid();
 
   Ref<SMENetPeer> connect_to_host(const String &address, uint8_t port, size_t channel_count, uint32_t data);
 
@@ -127,5 +138,6 @@ public:
   virtual ~SMENetHost();
 };
 
-VARIANT_ENUM_CAST(SMENetPacket::Flags);
+VARIANT_ENUM_CAST(SMENetPacket::Flags)
+VARIANT_ENUM_CAST(SMENetPeer::PeerState)
 #endif

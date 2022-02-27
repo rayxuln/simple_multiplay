@@ -33,11 +33,11 @@ void SMENetPacket::_bind_methods() {
   ClassDB::bind_method(D_METHOD("put_data_as_var", "v", "full_objects"), &SMENetPacket::put_data_as_var, false);
   ClassDB::bind_method(D_METHOD("get_data_var", "allow_objects"), &SMENetPacket::get_data_var, false);
 
-  BIND_ENUM_CONSTANT(Flags::FLAG_RELIABLE);
-  BIND_ENUM_CONSTANT(Flags::FLAG_UNSEQUENCED);
-  BIND_ENUM_CONSTANT(Flags::FLAG_NO_ALLOCATE);
-  BIND_ENUM_CONSTANT(Flags::FLAG_UNRELIABLE_FRAGMENT);
-  BIND_ENUM_CONSTANT(Flags::FLAG_SENT);
+  BIND_ENUM_CONSTANT(FLAG_RELIABLE);
+  BIND_ENUM_CONSTANT(FLAG_UNSEQUENCED);
+  BIND_ENUM_CONSTANT(FLAG_NO_ALLOCATE);
+  BIND_ENUM_CONSTANT(FLAG_UNRELIABLE_FRAGMENT);
+  BIND_ENUM_CONSTANT(FLAG_SENT);
 }
 
 Error SMENetPacket::create(uint32_t flags) {
@@ -275,6 +275,18 @@ void SMENetPeer::_bind_methods() {
   ClassDB::bind_method(D_METHOD("get_address"), &SMENetPeer::get_address);
   ClassDB::bind_method(D_METHOD("get_port"), &SMENetPeer::get_port);
   ClassDB::bind_method(D_METHOD("get_connect_id"), &SMENetPeer::get_connect_id);
+  ClassDB::bind_method(D_METHOD("get_state"), &SMENetPeer::get_state);
+
+  BIND_ENUM_CONSTANT(PEER_STATE_DISCONNECTED);
+  BIND_ENUM_CONSTANT(PEER_STATE_CONNECTING);
+  BIND_ENUM_CONSTANT(PEER_STATE_ACKNOWLEDGING_CONNECT);
+  BIND_ENUM_CONSTANT(PEER_STATE_CONNECTION_PENDING);
+  BIND_ENUM_CONSTANT(PEER_STATE_CONNECTION_SUCCEEDED);
+  BIND_ENUM_CONSTANT(PEER_STATE_CONNECTED);
+  BIND_ENUM_CONSTANT(PEER_STATE_DISCONNECT_LATER);
+  BIND_ENUM_CONSTANT(PEER_STATE_DISCONNECTING);
+  BIND_ENUM_CONSTANT(PEER_STATE_ACKNOWLEDGING_DISCONNECT);
+  BIND_ENUM_CONSTANT(PEER_STATE_ZOMBIE);
 }
 
 void SMENetPeer::disconnect_from_host(uint32_t data) {
@@ -315,6 +327,10 @@ uint32_t SMENetPeer::get_connect_id() {
   ERR_FAIL_COND_V(enet_peer == nullptr, 0);
   return enet_peer->connectID;
 }
+int SMENetPeer::get_state() {
+  ERR_FAIL_COND_V(enet_peer == nullptr, 0);
+  return enet_peer->state;
+}
 
 SMENetPeer::SMENetPeer() {
   enet_peer = nullptr;
@@ -330,6 +346,7 @@ void SMENetHost::_bind_methods() {
   ClassDB::bind_method(D_METHOD("host_service", "timeout"), &SMENetHost::host_service, 0);
   ClassDB::bind_method(D_METHOD("connect_to_host", "address", "port", "channel_count", "data"), &SMENetHost::connect_to_host, 2, 0);
   ClassDB::bind_method(D_METHOD("broadcast", "packet", "channel_id"), &SMENetHost::broadcast, 0);
+  ClassDB::bind_method(D_METHOD("is_valid"), &SMENetHost::is_valid);
 
   ADD_SIGNAL(MethodInfo("connected", PropertyInfo(Variant::OBJECT, "peer", PROPERTY_HINT_TYPE_STRING, "SMENetPeer")));
   ADD_SIGNAL(MethodInfo("disconnected", PropertyInfo(Variant::OBJECT, "peer", PROPERTY_HINT_TYPE_STRING, "SMENetPeer")));
@@ -358,6 +375,8 @@ Error SMENetHost::create_server(const String &address, uint8_t port, size_t peer
   enet_address.port = port;
   
   enet_host = renet_host_create(&enet_address, peer_count, channel_limits, 0, 0);
+  if (enet_host == nullptr) return Error::FAILED;
+
   return OK;
 }
 Error SMENetHost::create_client(size_t peer_count, size_t channel_limits) {
@@ -371,11 +390,11 @@ void SMENetHost::destroy() {
   enet_host = nullptr;
 }
 
-void SMENetHost::host_service(uint32_t timeout) {
-  ERR_FAIL_COND(enet_host == nullptr);
+Error SMENetHost::host_service(uint32_t timeout) {
+  ERR_FAIL_COND_V(enet_host == nullptr, Error::FAILED);
   ENetEvent event;
   int res = renet_host_service(enet_host, &event, timeout);
-  ERR_FAIL_COND_MSG(res < 0, "Something is wrong when hosting the service!(The host need to created as a server or connecting to a server as a client!)");
+  ERR_FAIL_COND_V_MSG(res < 0, Error::FAILED, "Something is wrong when hosting the service!(The host need to created as a server or connecting to a server as a client!)");
 
   Ref<SMENetPeer> peer(memnew(SMENetPeer));
   peer->set_enet_object(event.peer);
@@ -400,6 +419,8 @@ void SMENetHost::host_service(uint32_t timeout) {
       break;
     }
   }
+
+  return Error::OK;
 }
 
 Ref<SMENetPeer> SMENetHost::connect_to_host(const String &address, uint8_t port, size_t channel_count, uint32_t data) {
@@ -420,6 +441,10 @@ Ref<SMENetPeer> SMENetHost::connect_to_host(const String &address, uint8_t port,
   Ref<SMENetPeer> peer(memnew(SMENetPeer));
   peer->set_enet_object(enet_peer);
   return peer;
+}
+
+bool SMENetHost::is_valid() {
+  return enet_host != nullptr;
 }
 
 void SMENetHost::broadcast(Ref<SMENetPacket> packet, uint8_t channel_id) {
